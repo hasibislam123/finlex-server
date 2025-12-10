@@ -470,6 +470,33 @@ async function run() {
          }
       });
 
+      // Admin - Update loan status
+      app.patch('/loans/:id/status/admin', verifyFBToken, verifyAdmin, async (req, res) => {
+         try {
+            const { id } = req.params;
+            const { status } = req.body;
+
+            // Validate status
+            if (!['Pending', 'Approved', 'Rejected'].includes(status)) {
+               return res.status(400).json({ error: 'Invalid status' });
+            }
+
+            const result = await loansCollection.updateOne(
+               { _id: new ObjectId(id) },
+               { $set: { status: status } }
+            );
+
+            if (result.matchedCount === 0) {
+               return res.status(404).json({ error: 'Loan not found' });
+            }
+
+            res.json({ message: 'Loan status updated successfully', result });
+         } catch (error) {
+            console.error('Error updating loan status:', error);
+            res.status(500).json({ error: 'Failed to update loan status' });
+         }
+      });
+
       // Admin - Toggle show on home
       app.patch('/loans/:id/show-on-home', verifyFBToken, async (req, res) => {
          try {
@@ -512,6 +539,34 @@ async function run() {
          }
       });
 
+      // Manager - Update loan
+      app.put('/loans/:id', verifyFBToken, verifyManager, async (req, res) => {
+         try {
+            const { id } = req.params;
+            const updatedLoanData = req.body;
+
+            // Remove fields that shouldn't be updated
+            delete updatedLoanData._id;
+            delete updatedLoanData.createdAt;
+            delete updatedLoanData.createdBy;
+
+            // Update the loan
+            const result = await loansCollection.updateOne(
+               { _id: new ObjectId(id) },
+               { $set: updatedLoanData }
+            );
+
+            if (result.matchedCount === 0) {
+               return res.status(404).json({ error: 'Loan not found' });
+            }
+
+            res.json({ message: 'Loan updated successfully', result });
+         } catch (error) {
+            console.error('Error updating loan:', error);
+            res.status(500).json({ error: 'Failed to update loan' });
+         }
+      });
+
       // Manager - Add loan
       app.post('/loans', verifyFBToken, verifyManager, async (req, res) => {
          try {
@@ -531,10 +586,11 @@ async function run() {
          }
       });
 
-      // Manager - Get loans created by manager
+      // Manager - Get all loans (modified to show all loans, not just manager-created ones)
       app.get('/loans/manager', verifyFBToken, verifyManager, async (req, res) => {
          try {
-            const loans = await loansCollection.find({ createdBy: req.decoded.email }).sort({ createdAt: -1 }).toArray();
+            // Get all loans sorted by creation date
+            const loans = await loansCollection.find({}).sort({ createdAt: -1 }).toArray();
             res.json(loans);
          } catch (error) {
             console.error('Error fetching manager loans:', error);
