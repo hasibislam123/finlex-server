@@ -66,7 +66,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
    try {
-      // Connect the client to the server	(optional starting in v4.7)
+      // Connect the client to the server
       await client.connect();
       console.log("Connected to MongoDB successfully!");
 
@@ -102,7 +102,7 @@ async function run() {
          const email = req.decoded.email;
          
          try {
-            // Find user in database
+            
             const user = await usersCollection.findOne({ email: email });
             
             if (!user) {
@@ -123,7 +123,7 @@ async function run() {
       // user related apis
       app.post('/users',   async (req, res) => {
          const user = req.body;
-         console.log('Received user data:', user); // Debug log
+         console.log('Received user data:', user); 
 
          // Validate required fields
          if (!user.email) {
@@ -131,16 +131,16 @@ async function run() {
          }
 
          user.role = user.role || 'borrower';
-         user.status = 'pending'; // New users start with pending status
+         user.status = 'pending';
          user.createdAt = new Date();
 
          const email = user.email;
-         console.log('Processing user with email:', email); // Debug log
+         console.log('Processing user with email:', email);
 
          const userExists = await usersCollection.findOne({ email });
 
          if (userExists) {
-            console.log('User exists, updating...'); // Debug log
+            console.log('User exists, updating...'); 
             console.log('Updating with data:', {
                name: user.name,
                photoURL: user.photoURL,
@@ -161,13 +161,13 @@ async function run() {
             };
 
             const result = await usersCollection.updateOne({ email }, updatedUser);
-            console.log('Update result:', result); // Debug log
+            console.log('Update result:', result); 
             return res.send(result);
          }
 
-         console.log('Creating new user with data:', user); // Debug log
+         console.log('Creating new user with data:', user); 
          const result = await usersCollection.insertOne(user);
-         console.log('Insert result:', result); // Debug log
+         console.log('Insert result:', result);
          res.send(result);
       })
 
@@ -176,7 +176,7 @@ async function run() {
       })
       app.get('/users/:email/role', async (req, res) => {
          const email = req.params.email;
-         const query = { email: email };  // Fix: define the query variable
+         const query = { email: email };  
          const user = await usersCollection.findOne(query);
          res.send({ role: user?.role || 'user' });
       })
@@ -293,7 +293,7 @@ async function run() {
       });
 
       // Approve user
-      app.patch('/users/:id/approve', verifyFBToken, verifyAdmin, async (req, res) => {
+      app.patch('/users/:id/approve', verifyFBToken, async (req, res) => {
          try {
             const { id } = req.params;
             
