@@ -443,10 +443,8 @@ async function run() {
 
 
       // Admin - Get all loans
-      app.get('/loans/admin', verifyFBToken, async (req, res) => {
+      app.get('/loans/admin', verifyFBToken, verifyAdmin, async (req, res) => {
          try {
-            // In a real application, you would check if the user is an admin
-            // For now, we'll return all loans
             const loans = await loansCollection.find({}).sort({ createdAt: -1 }).toArray();
             res.json(loans);
          } catch (error) {
@@ -456,10 +454,8 @@ async function run() {
       });
 
       // Admin - Get loan applications
-      app.get('/loans/applications', verifyFBToken, async (req, res) => {
+      app.get('/loans/applications', verifyFBToken, verifyAdmin, async (req, res) => {
          try {
-            // In a real application, you would check if the user is an admin
-            // For now, we'll return all loans with status 'Pending' or 'Reviewing'
             const loans = await loansCollection.find({
                status: { $in: ['Pending', 'Reviewing'] }
             }).sort({ createdAt: -1 }).toArray();
@@ -498,7 +494,7 @@ async function run() {
       });
 
       // Admin - Toggle show on home
-      app.patch('/loans/:id/show-on-home', verifyFBToken, async (req, res) => {
+      app.patch('/loans/:id/show-on-home', verifyFBToken, verifyAdmin, async (req, res) => {
          try {
             const { id } = req.params;
             const { showOnHome } = req.body;
@@ -520,7 +516,7 @@ async function run() {
       });
 
       // Admin - Delete loan
-      app.delete('/loans/:id/admin', verifyFBToken, async (req, res) => {
+      app.delete('/loans/:id/admin', verifyFBToken, verifyAdmin, async (req, res) => {
          try {
             const { id } = req.params;
 
