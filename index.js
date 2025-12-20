@@ -121,7 +121,7 @@ async function run() {
       }
 
       // user related apis
-      app.post('/users',   async (req, res) => {
+      app.post('/users', verifyFBToken, async (req, res) => {
          const user = req.body;
          console.log('Received user data:', user); 
 
@@ -130,45 +130,51 @@ async function run() {
             return res.status(400).send({ message: 'Email is required' });
          }
 
+         // Ensure default values
          user.role = user.role || 'borrower';
-         user.status = 'pending';
-         user.createdAt = new Date();
+         user.status = user.status || 'pending';
+         user.createdAt = user.createdAt || new Date();
 
          const email = user.email;
          console.log('Processing user with email:', email);
 
-         const userExists = await usersCollection.findOne({ email });
-
-         if (userExists) {
-            console.log('User exists, updating...'); 
-            console.log('Updating with data:', {
-               name: user.name,
-               photoURL: user.photoURL,
-               role: user.role,
-               status: user.status,
-               createdAt: user.createdAt
-            });
-
-            // Update existing user with new information
-            const updatedUser = {
-               $set: {
+         try {
+            const userExists = await usersCollection.findOne({ email });
+            
+            if (userExists) {
+               console.log('User exists, updating...'); 
+               console.log('Updating with data:', {
                   name: user.name,
                   photoURL: user.photoURL,
                   role: user.role,
                   status: user.status,
                   createdAt: user.createdAt
-               }
-            };
+               });
 
-            const result = await usersCollection.updateOne({ email }, updatedUser);
-            console.log('Update result:', result); 
-            return res.send(result);
+               // Update existing user with new information
+               const updatedUser = {
+                  $set: {
+                     name: user.name,
+                     photoURL: user.photoURL,
+                     role: user.role,
+                     status: user.status,
+                     createdAt: user.createdAt
+                  }
+               };
+
+               const result = await usersCollection.updateOne({ email }, updatedUser);
+               console.log('Update result:', result); 
+               return res.send(result);
+            }
+
+            console.log('Creating new user with data:', user); 
+            const result = await usersCollection.insertOne(user);
+            console.log('Insert result:', result);
+            res.send(result);
+         } catch (error) {
+            console.error('Error processing user:', error);
+            res.status(500).send({ message: 'Internal server error while processing user' });
          }
-
-         console.log('Creating new user with data:', user); 
-         const result = await usersCollection.insertOne(user);
-         console.log('Insert result:', result);
-         res.send(result);
       })
 
       app.get('/users/:id', async (req, res) => {
@@ -194,11 +200,22 @@ async function run() {
             if (!user) {
                // If user doesn't exist in DB, return an error
                // Users should be created during registration, not here
-               console.log('User not found in database');
-               return res.status(404).json({ error: 'User profile not found' });
+               console.log('User not found in database for email:', email);
+               return res.status(404).json({ error: 'User profile not found. Please complete registration.' });
             }
 
-            res.json(user);
+            // Ensure the user object has all required fields
+            const userProfile = {
+               _id: user._id,
+               name: user.name || '',
+               email: user.email,
+               photoURL: user.photoURL || '',
+               role: user.role || 'borrower',
+               status: user.status || 'pending',
+               createdAt: user.createdAt || new Date()
+            };
+
+            res.json(userProfile);
          } catch (error) {
             console.error('Error fetching user profile:', error);
             res.status(500).json({ error: 'Failed to fetch profile' });
