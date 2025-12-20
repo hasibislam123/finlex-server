@@ -46,7 +46,7 @@ const verifyFBToken = async (req, res, next) => {
       req.decoded_email = decoded.email
       req.decoded = decoded; // Store full decoded token for access to other properties
 
-      next()
+       next()
    }
    catch (err) {
       console.error('Token verification error:', err);
