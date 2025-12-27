@@ -187,7 +187,7 @@ async function run() {
             const email = req.decoded.email;
             console.log('Profile request for email:', email);
 
-            // Find user in database
+            // Find user in database - this ensures we always get the latest role from DB
             const user = await usersCollection.findOne({ email: email });
             console.log('Found user:', user);
 
@@ -198,6 +198,8 @@ async function run() {
                return res.status(404).json({ error: 'User profile not found' });
             }
 
+            // Always return the latest user data from the database, not cached token data
+            // This ensures that any role changes are immediately reflected
             res.json(user);
          } catch (error) {
             console.error('Error fetching user profile:', error);
@@ -226,7 +228,9 @@ async function run() {
                return res.status(404).json({ error: 'User not found' });
             }
 
-            res.json({ message: 'Profile updated successfully' });
+
+
+            res.json({ message: ' Profile updated successfully ' });
          } catch (error) {
             console.error('Error updating user profile:', error);
             res.status(500).json({ error: 'Failed to update profile' });
@@ -264,6 +268,7 @@ async function run() {
                return res.status(404).json({ error: 'User not found' });
             }
             
+            // After updating role, return success message
             res.json({ message: 'User role updated successfully' });
          } catch (error) {
             console.error('Error updating user role:', error);
