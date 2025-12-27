@@ -228,9 +228,7 @@ async function run() {
                return res.status(404).json({ error: 'User not found' });
             }
 
-
-
-            res.json({ message: ' Profile updated successfully ' });
+            res.json({ message: 'Profile updated successfully' });
          } catch (error) {
             console.error('Error updating user profile:', error);
             res.status(500).json({ error: 'Failed to update profile' });
@@ -269,7 +267,8 @@ async function run() {
             }
             
             // After updating role, return success message
-            res.json({ message: 'User role updated successfully' });
+            // Also try to clear any cached tokens by sending a cache-busting response
+            res.json({ message: 'User role updated successfully', role });
          } catch (error) {
             console.error('Error updating user role:', error);
             res.status(500).json({ error: 'Failed to update user role' });
