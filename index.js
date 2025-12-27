@@ -11,8 +11,8 @@ const admin = require("firebase-admin");
 // Convert hex string from .env to JSON object
 const serviceAccountHex = process.env.FIREBASE_SERVICE_ACCOUNT_HEX;
 if (!serviceAccountHex) {
-  console.error('FIREBASE_SERVICE_ACCOUNT_HEX not found in .env file');
-  process.exit(1);
+   console.error('FIREBASE_SERVICE_ACCOUNT_HEX not found in .env file');
+   process.exit(1);
 }
 
 const serviceAccountJson = Buffer.from(serviceAccountHex, 'hex').toString('utf8');
@@ -46,7 +46,7 @@ const verifyFBToken = async (req, res, next) => {
       req.decoded_email = decoded.email
       req.decoded = decoded; // Store full decoded token for access to other properties
 
-       next()
+      next()
    }
    catch (err) {
       console.error('Token verification error:', err);
@@ -73,23 +73,23 @@ async function run() {
       const db = client.db('finlix_db');
       const loansCollection = db.collection('loans');
       const usersCollection = db.collection('users');
-      
+
       // Middleware to verify if user is admin (moved inside run() function)
       const verifyAdmin = async (req, res, next) => {
          const email = req.decoded.email;
-         
+
          try {
             // Find user in database
             const user = await usersCollection.findOne({ email: email });
-            
+
             if (!user) {
                return res.status(403).send({ message: 'Forbidden: User not found' });
             }
-            
+
             if (user.role !== 'admin') {
                return res.status(403).send({ message: 'Forbidden: Admin access required' });
             }
-            
+
             next();
          } catch (error) {
             console.error('Admin verification error:', error);
@@ -100,19 +100,19 @@ async function run() {
       // Middleware to verify if user is manager
       const verifyManager = async (req, res, next) => {
          const email = req.decoded.email;
-         
+
          try {
-            
+
             const user = await usersCollection.findOne({ email: email });
-            
+
             if (!user) {
                return res.status(403).send({ message: 'Forbidden: User not found' });
             }
-            
+
             if (user.role !== 'manager') {
                return res.status(403).send({ message: 'Forbidden: Manager access required' });
             }
-            
+
             next();
          } catch (error) {
             console.error('Manager verification error:', error);
@@ -121,9 +121,9 @@ async function run() {
       }
 
       // user related apis
-      app.post('/users',   async (req, res) => {
+      app.post('/users', async (req, res) => {
          const user = req.body;
-         console.log('Received user data:', user); 
+         console.log('Received user data:', user);
 
          // Validate required fields
          if (!user.email) {
@@ -140,7 +140,7 @@ async function run() {
          const userExists = await usersCollection.findOne({ email });
 
          if (userExists) {
-            console.log('User exists, updating...'); 
+            console.log('User exists, updating...');
             console.log('Updating with data:', {
                name: user.name,
                photoURL: user.photoURL,
@@ -161,11 +161,11 @@ async function run() {
             };
 
             const result = await usersCollection.updateOne({ email }, updatedUser);
-            console.log('Update result:', result); 
+            console.log('Update result:', result);
             return res.send(result);
          }
 
-         console.log('Creating new user with data:', user); 
+         console.log('Creating new user with data:', user);
          const result = await usersCollection.insertOne(user);
          console.log('Insert result:', result);
          res.send(result);
@@ -176,7 +176,7 @@ async function run() {
       })
       app.get('/users/:email/role', async (req, res) => {
          const email = req.params.email;
-         const query = { email: email };  
+         const query = { email: email };
          const user = await usersCollection.findOne(query);
          res.send({ role: user?.role || 'user' });
       })
@@ -251,21 +251,21 @@ async function run() {
          try {
             const { id } = req.params;
             const { role } = req.body;
-            
+
             // Validate role
             if (!['borrower', 'manager', 'admin'].includes(role)) {
                return res.status(400).json({ error: 'Invalid role' });
             }
-            
+
             const result = await usersCollection.updateOne(
                { _id: new ObjectId(id) },
                { $set: { role: role } }
             );
-            
+
             if (result.matchedCount === 0) {
                return res.status(404).json({ error: 'User not found' });
             }
-            
+
             // After updating role, return success message
             // Also try to clear any cached tokens by sending a cache-busting response
             res.json({ message: 'User role updated successfully', role });
@@ -279,16 +279,16 @@ async function run() {
       app.patch('/users/:id/suspend', verifyFBToken, verifyAdmin, async (req, res) => {
          try {
             const { id } = req.params;
-            
+
             const result = await usersCollection.updateOne(
                { _id: new ObjectId(id) },
                { $set: { status: 'suspended' } }
             );
-            
+
             if (result.matchedCount === 0) {
                return res.status(404).json({ error: 'User not found' });
             }
-            
+
             res.json({ message: 'User suspended successfully' });
          } catch (error) {
             console.error('Error suspending user:', error);
@@ -300,16 +300,16 @@ async function run() {
       app.patch('/users/:id/approve', verifyFBToken, async (req, res) => {
          try {
             const { id } = req.params;
-            
+
             const result = await usersCollection.updateOne(
                { _id: new ObjectId(id) },
                { $set: { status: 'approved' } }
             );
-            
+
             if (result.matchedCount === 0) {
                return res.status(404).json({ error: 'User not found' });
             }
-            
+
             res.json({ message: 'User approved successfully' });
          } catch (error) {
             console.error('Error approving user:', error);
@@ -624,11 +624,11 @@ async function run() {
       app.get('/users/manager-stats', verifyFBToken, verifyManager, async (req, res) => {
          try {
             const users = await usersCollection.find({}).toArray();
-            
+
             const borrowerCount = users.filter(u => u.role === 'borrower').length;
             const managerCount = users.filter(u => u.role === 'manager').length;
             const adminCount = users.filter(u => u.role === 'admin').length;
-            
+
             res.json({
                totalUsers: users.length,
                borrowerCount,
